@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>创建订单 - 图书商城</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .navbar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">📚 图书商城</a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/">首页</a>
+                <a class="nav-link" href="#" id="profileLink">👤 个人中心</a>
+                <a class="nav-link" href="#" id="cartLink">🛒 购物车</a>
+                <a class="nav-link" href="#" onclick="logout()">退出</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <h2>创建订单</h2>
+        <div class="card">
+            <div class="card-body">
+                <form id="orderForm">
+                    <div class="mb-3">
+                        <label class="form-label">收货地址</label>
+                        <textarea class="form-control" id="shippingAddress" rows="3" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">提交订单</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentUser = null;
+
+        function loadUser() {
+            const userStr = localStorage.getItem('user');
+            if (!userStr) {
+                window.location.href = '/login';
+                return;
+            }
+            currentUser = JSON.parse(userStr);
+            document.getElementById('profileLink').href = '/profile?userId=' + currentUser.id;
+            document.getElementById('cartLink').href = '/cart?userId=' + currentUser.id;
+        }
+
+        document.getElementById('orderForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const shippingAddress = document.getElementById('shippingAddress').value;
+
+            const response = await fetch('/api/orders', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `userId=${currentUser.id}&shippingAddress=${encodeURIComponent(shippingAddress)}`
+            });
+
+            const result = await response.json();
+            if (result.success) {
+                alert('订单创建成功！');
+                window.location.href = `/orders?userId=${currentUser.id}`;
+            } else {
+                alert(result.message);
+            }
+        });
+
+        function logout() {
+            localStorage.removeItem('user');
+            window.location.href = '/login';
+        }
+
+        loadUser();
+    </script>
+</body>
+</html>
