@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>审批管理 - 图书商城</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <style>
+        .approval-card {
+            margin-bottom: 20px;
+        }
+        .approval-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+        .approval-number {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-color);
+            margin-bottom: 5px;
+        }
+        .approval-date {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+        .approval-status {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 500;
+            font-size: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+        }
+        .approval-status.PENDING {
+            background: var(--warning-gradient);
+            color: white;
+        }
+        .approval-status.APPROVED {
+            background: var(--success-gradient);
+            color: white;
+        }
+        .approval-status.REJECTED {
+            background: var(--secondary-gradient);
+            color: white;
+        }
+        .approval-status.CANCELLED {
+            background: #6c757d;
+            color: white;
+        }
+        .approval-body {
+            padding: 20px;
+        }
+        .approval-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            background: var(--bg-color);
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+        .item-image {
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--primary-gradient);
+            border-radius: 10px;
+            font-size: 24px;
+            margin-right: 15px;
+        }
+        .item-info {
+            flex: 1;
+        }
+        .item-name {
+            font-weight: 600;
+            color: var(--text-color);
+            margin-bottom: 5px;
+        }
+        .item-quantity {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+        .item-amount {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+        .approval-reason {
+            padding: 15px;
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+        .approval-comment {
+            padding: 15px;
+            background: #d1e7dd;
+            border-left: 4px solid #198754;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+        .approval-footer {
+            padding: 20px;
+            border-top: 1px solid rgba(0, 0, 0, 0.05);
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+        .filter-tabs {
+            display: flex;
+            gap: 10px;
+            background: white;
+            padding: 10px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            flex-wrap: wrap;
+        }
+        .filter-tab {
+            padding: 10px 20px;
+            border: none;
+            background: transparent;
+            color: #6c757d;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            position: relative;
+        }
+        .filter-tab:hover {
+            background: #f8f9fa;
+            color: var(--primary-color);
+        }
+        .filter-tab.active {
+            background: var(--primary-gradient);
+            color: white;
+            box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3);
+        }
+        .filter-tab.active:hover {
+            background: var(--primary-gradient);
+            color: white;
+        }
+        .filter-tab i {
+            font-size: 1.1rem;
+        }
+        .filter-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #dc3545;
+            color: white;
+            font-size: 0.7rem;
+            padding: 2px 6px;
+            border-radius: 10px;
+            min-width: 18px;
+            text-align: center;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 80px 20px;
+        }
+        .empty-state-icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+            animation: float 3s ease-in-out infinite;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+        @media (max-width: 768px) {
+            .approval-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+            .approval-status {
+                align-self: flex-start;
+            }
+            .approval-footer {
+                flex-direction: column;
+            }
+            .approval-footer .btn {
+                width: 100%;
+            }
+            .filter-tabs {
+                gap: 5px;
+                padding: 8px;
+            }
+            .filter-tab {
+                padding: 8px 12px;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">📚 图书商城</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <div class="navbar-nav ms-auto">
+                    <a class="nav-link" href="/">首页</a>
+                    <a class="nav-link" href="#" id="notificationLink">
+                        <i class="bi bi-bell me-1"></i>通知
+                    </a>
+                    <div class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="profileDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-person-circle me-1"></i>个人中心
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profileDropdown">
+                            <li>
+                                <a class="dropdown-item" href="#" id="profileLink">
+                                    <i class="bi bi-person me-2"></i>
+                                    个人中心
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item" href="#" onclick="logout()">
+                                    <i class="bi bi-box-arrow-right me-2"></i>
+                                    退出
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2 class="page-title">
+                    <i class="bi bi-clipboard-check me-2"></i>进货审批
+                </h2>
+                <p class="text-muted">管理和处理进货申请</p>
+            </div>
+            <button class="btn btn-primary" onclick="window.location.href='/approval/create?userId=' + currentUser.id">
+                <i class="bi bi-plus-circle me-2"></i>提交申请
+            </button>
+        </div>
+        
+        <div class="filter-tabs mb-4">
+            <button class="filter-tab active" onclick="filterApprovals('')">
+                <i class="bi bi-list-ul me-1"></i>全部
+                <span class="filter-badge">0</span>
+            </button>
+            <button class="filter-tab" onclick="filterApprovals('PENDING')">
+                <i class="bi bi-clock me-1"></i>待审批
+                <span class="filter-badge">0</span>
+            </button>
+            <button class="filter-tab" onclick="filterApprovals('APPROVED')">
+                <i class="bi bi-check-circle me-1"></i>已通过
+                <span class="filter-badge">0</span>
+            </button>
+            <button class="filter-tab" onclick="filterApprovals('REJECTED')">
+                <i class="bi bi-x-circle me-1"></i>已拒绝
+                <span class="filter-badge">0</span>
+            </button>
+            <button class="filter-tab" onclick="filterApprovals('CANCELLED')">
+                <i class="bi bi-dash-circle me-1"></i>已取消
+                <span class="filter-badge">0</span>
+            </button>
+        </div>
+        
+        <div id="approvalList"></div>
+    </div>
+
+    <script>
+        let currentUser = null;
+        let allApprovals = [];
+        let currentFilter = '';
+
+        function loadUser() {
+            const userStr = localStorage.getItem('user');
+            if (!userStr) {
+                window.location.href = '/login';
+                return;
+            }
+            currentUser = JSON.parse(userStr);
+            document.getElementById('profileLink').href = '/profile?userId=' + currentUser.id;
+            document.getElementById('notificationLink').href = '/notifications?userId=' + currentUser.id;
+            loadApprovals();
+        }
+
+        async function loadApprovals() {
+            const response = await fetch(`/api/approvals?userId=${currentUser.id}`);
+            allApprovals = await response.json();
+            updateFilterBadges();
+            filterApprovals(currentFilter);
+        }
+
+        function updateFilterBadges() {
+            const counts = {
+                '': allApprovals.length,
+                'PENDING': allApprovals.filter(req => req.status === 'PENDING').length,
+                'APPROVED': allApprovals.filter(req => req.status === 'APPROVED').length,
+                'REJECTED': allApprovals.filter(req => req.status === 'REJECTED').length,
+                'CANCELLED': allApprovals.filter(req => req.status === 'CANCELLED').length
+            };
+
+            document.querySelectorAll('.filter-tab').forEach(tab => {
+                const status = tab.getAttribute('onclick').match(/'([^']+)'/)[1];
+                const badge = tab.querySelector('.filter-badge');
+                if (badge) {
+                    badge.textContent = counts[status] || 0;
+                    badge.style.display = counts[status] > 0 ? 'block' : 'none';
+                }
+            });
+        }
+
+        function filterApprovals(status) {
+            currentFilter = status;
+            const filtered = status ? allApprovals.filter(req => req.status === status) : allApprovals;
+            renderApprovals(filtered);
+            
+            document.querySelectorAll('.filter-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.target.closest('.filter-tab')?.classList.add('active');
+        }
+
+        function renderApprovals(requests) {
+            const container = document.getElementById('approvalList');
+            if (requests.length === 0) {
+                const emptyMessages = {
+                    '': '还没有任何进货申请记录',
+                    'PENDING': '暂无待审批的申请',
+                    'APPROVED': '暂无已通过的申请',
+                    'REJECTED': '暂无已拒绝的申请',
+                    'CANCELLED': '暂无已取消的申请'
+                };
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📋</div>
+                        <h3>暂无审批记录</h3>
+                        <p class="text-muted">${emptyMessages[currentFilter] || '暂无记录'}</p>
+                        <button class="btn btn-primary" onclick="window.location.href='/approval/create?userId=' + currentUser.id">
+                            <i class="bi bi-plus-circle me-2"></i>提交申请
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+            container.innerHTML = requests.map(req => `
+                <div class="card approval-card fade-in">
+                    <div class="approval-header">
+                        <div>
+                            <div class="approval-number">
+                                <i class="bi bi-receipt me-2"></i>申请号: ${req.requestNo}
+                            </div>
+                            <div class="approval-date">
+                                <i class="bi bi-calendar me-1"></i>${new Date(req.createdAt).toLocaleString('zh-CN')}
+                            </div>
+                        </div>
+                        <span class="approval-status ${req.status}">
+                            <i class="bi bi-info-circle me-1"></i>
+                            ${getStatusText(req.status)}
+                        </span>
+                    </div>
+                    <div class="approval-body">
+                        <div class="approval-item">
+                            <div class="item-image">
+                                <span>📖</span>
+                            </div>
+                            <div class="item-info">
+                                <div class="item-name">${req.product?.name || '未知商品'}</div>
+                                <div class="item-quantity">申请数量: ${req.quantity} 本</div>
+                            </div>
+                            <div class="item-amount">¥${req.amount}</div>
+                        </div>
+                        ${req.reason ? `
+                            <div class="approval-reason">
+                                <strong><i class="bi bi-chat-quote me-1"></i>申请原因:</strong>
+                                <p class="mb-0 mt-1">${req.reason}</p>
+                            </div>
+                        ` : ''}
+                        ${req.approvalComment ? `
+                            <div class="approval-comment">
+                                <strong><i class="bi bi-chat-dots me-1"></i>审批意见:</strong>
+                                <p class="mb-0 mt-1">${req.approvalComment}</p>
+                            </div>
+                        ` : ''}
+                    </div>
+                    ${req.status === 'PENDING' && (currentUser.role === 'MANAGER' || currentUser.role === 'BOSS') ? `
+                        <div class="approval-footer">
+                            <button class="btn btn-success" onclick="approve(${req.id})">
+                                <i class="bi bi-check-circle me-1"></i>通过
+                            </button>
+                            <button class="btn btn-danger" onclick="reject(${req.id})">
+                                <i class="bi bi-x-circle me-1"></i>拒绝
+                            </button>
+                        </div>
+                    ` : ''}
+                    ${req.status === 'APPROVED' && (currentUser.role === 'MANAGER' || currentUser.role === 'BOSS') ? `
+                        <div class="approval-footer">
+                            <button class="btn btn-secondary" onclick="cancel(${req.id})">
+                                <i class="bi bi-dash-circle me-1"></i>取消
+                            </button>
+                        </div>
+                    ` : ''}
+                </div>
+            `).join('');
+        }
+
+        function getStatusText(status) {
+            const texts = {
+                'PENDING': '待审批',
+                'APPROVED': '已通过',
+                'REJECTED': '已拒绝',
+                'CANCELLED': '已取消'
+            };
+            return texts[status] || status;
+        }
+
+        async function approve(requestId) {
+            const comment = prompt('请输入审批意见（可选）');
+            if (comment === null) {
+                return;
+            }
+            const response = await fetch(`/api/approvals/${requestId}/approve`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `approverId=${currentUser.id}&comment=${encodeURIComponent(comment || '')}`
+            });
+            const result = await response.json();
+            if (result.success) {
+                alert('审批通过成功！');
+                loadApprovals();
+            } else {
+                alert('审批失败：' + result.message);
+            }
+        }
+
+        async function reject(requestId) {
+            const comment = prompt('请输入拒绝原因');
+            if (comment === null || comment.trim() === '') {
+                return;
+            }
+            const response = await fetch(`/api/approvals/${requestId}/reject`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `approverId=${currentUser.id}&comment=${encodeURIComponent(comment)}`
+            });
+            const result = await response.json();
+            if (result.success) {
+                alert('已拒绝该申请！');
+                loadApprovals();
+            } else {
+                alert('操作失败：' + result.message);
+            }
+        }
+
+        async function cancel(requestId) {
+            const comment = prompt('请输入取消原因');
+            if (comment === null || comment.trim() === '') {
+                return;
+            }
+            const response = await fetch(`/api/approvals/${requestId}/cancel`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `operatorId=${currentUser.id}&comment=${encodeURIComponent(comment)}`
+            });
+            const result = await response.json();
+            if (result.success) {
+                alert('已取消该申请！');
+                loadApprovals();
+            } else {
+                alert('操作失败：' + result.message);
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('user');
+            window.location.href = '/login';
+        }
+
+        loadUser();
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

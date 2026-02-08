@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>通知中心 - 图书商城</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <style>
+        .notification-card {
+            margin-bottom: 20px;
+            border-left: 4px solid var(--primary-color);
+            transition: all var(--transition-speed);
+        }
+        .notification-card.unread {
+            border-left-color: #ffc107;
+            background: linear-gradient(to right, #fff8e1 0%, #ffffff 100%);
+        }
+        .notification-card:hover {
+            transform: translateX(5px);
+        }
+        .notification-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+        .notification-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-color);
+            display: flex;
+            align-items: center;
+        }
+        .notification-icon {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--primary-gradient);
+            border-radius: 50%;
+            margin-right: 15px;
+            font-size: 18px;
+        }
+        .notification-time {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+        .notification-body {
+            padding: 20px;
+        }
+        .notification-content {
+            color: var(--text-color);
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+        .notification-type {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+        }
+        .notification-type.ORDER {
+            background: var(--primary-gradient);
+            color: white;
+        }
+        .notification-type.APPROVAL {
+            background: var(--success-gradient);
+            color: white;
+        }
+        .notification-type.INVENTORY {
+            background: var(--warning-gradient);
+            color: white;
+        }
+        .notification-footer {
+            padding: 15px 20px;
+            border-top: 1px solid rgba(0, 0, 0, 0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .unread-indicator {
+            width: 10px;
+            height: 10px;
+            background: #ffc107;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .empty-state {
+            text-align: center;
+            padding: 80px 20px;
+        }
+        .empty-state-icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+            animation: float 3s ease-in-out infinite;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+        .notification-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--card-shadow);
+            text-align: center;
+            transition: all var(--transition-speed);
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--card-hover-shadow);
+        }
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .stat-label {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-top: 5px;
+        }
+        @media (max-width: 768px) {
+            .notification-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+            .notification-footer {
+                flex-direction: column;
+                gap: 10px;
+            }
+            .notification-footer .btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">📚 图书商城</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <div class="navbar-nav ms-auto">
+                    <a class="nav-link" href="/">首页</a>
+                    <a class="nav-link" href="#" id="approvalLink" style="display:none;">
+                        <i class="bi bi-clipboard-check me-1"></i>审批管理
+                    </a>
+                    <div class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="profileDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-person-circle me-1"></i>个人中心
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profileDropdown">
+                            <li>
+                                <a class="dropdown-item" href="#" id="profileLink">
+                                    <i class="bi bi-person me-2"></i>个人中心
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item" href="#" onclick="logout()">
+                                    <i class="bi bi-box-arrow-right me-2"></i>退出
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2 class="page-title">
+                    <i class="bi bi-bell me-2"></i>通知中心
+                </h2>
+                <p class="text-muted">查看和管理您的通知消息</p>
+            </div>
+            <button class="btn btn-primary" onclick="markAllAsRead()">
+                <i class="bi bi-check2-all me-2"></i>全部标记为已读
+            </button>
+        </div>
+        
+        <div class="notification-stats" id="notificationStats"></div>
+        
+        <div class="filter-tabs mb-4">
+            <button class="filter-tab active" onclick="filterNotifications('')">
+                <i class="bi bi-list-ul me-1"></i>全部
+            </button>
+            <button class="filter-tab" onclick="filterNotifications('unread')">
+                <i class="bi bi-envelope me-1"></i>未读
+            </button>
+            <button class="filter-tab" onclick="filterNotifications('ORDER')">
+                <i class="bi bi-bag me-1"></i>订单
+            </button>
+            <button class="filter-tab" onclick="filterNotifications('APPROVAL')">
+                <i class="bi bi-clipboard-check me-1"></i>审批
+            </button>
+        </div>
+        
+        <div id="notificationList"></div>
+    </div>
+
+    <script>
+        let currentUser = null;
+        let allNotifications = [];
+        let currentFilter = '';
+
+        function loadUser() {
+            const userStr = localStorage.getItem('user');
+            if (!userStr) {
+                window.location.href = '/login';
+                return;
+            }
+            currentUser = JSON.parse(userStr);
+            document.getElementById('profileLink').href = '/profile?userId=' + currentUser.id;
+            
+            if (currentUser.role === 'STAFF' || currentUser.role === 'MANAGER' || currentUser.role === 'BOSS') {
+                document.getElementById('approvalLink').style.display = 'block';
+                document.getElementById('approvalLink').href = '/approvals?userId=' + currentUser.id;
+            }
+            
+            loadNotifications();
+        }
+
+        async function loadNotifications() {
+            const response = await fetch(`/api/notifications?userId=${currentUser.id}`);
+            allNotifications = await response.json();
+            filterNotifications(currentFilter);
+        }
+
+        function filterNotifications(filter) {
+            currentFilter = filter;
+            let filtered = allNotifications;
+            
+            if (filter === 'unread') {
+                filtered = allNotifications.filter(notif => !notif.isRead);
+            } else if (filter) {
+                filtered = allNotifications.filter(notif => notif.type === filter);
+            }
+            
+            renderStats();
+            renderNotifications(filtered);
+            
+            document.querySelectorAll('.filter-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.target.closest('.filter-tab')?.classList.add('active');
+        }
+
+        function renderStats() {
+            const total = allNotifications.length;
+            const unread = allNotifications.filter(n => !n.isRead).length;
+            const orders = allNotifications.filter(n => n.type === 'ORDER').length;
+            const approvals = allNotifications.filter(n => n.type === 'APPROVAL').length;
+            
+            document.getElementById('notificationStats').innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-number">${total}</div>
+                    <div class="stat-label">全部通知</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${unread}</div>
+                    <div class="stat-label">未读通知</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${orders}</div>
+                    <div class="stat-label">订单通知</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${approvals}</div>
+                    <div class="stat-label">审批通知</div>
+                </div>
+            `;
+        }
+
+        function renderNotifications(notifications) {
+            const container = document.getElementById('notificationList');
+            if (notifications.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🔔</div>
+                        <h3>暂无通知</h3>
+                        <p class="text-muted">您暂时没有收到任何通知</p>
+                    </div>
+                `;
+                return;
+            }
+            container.innerHTML = notifications.map(notif => `
+                <div class="card notification-card ${notif.isRead ? '' : 'unread'} fade-in">
+                    <div class="notification-header">
+                        <div class="notification-title">
+                            <div class="notification-icon">
+                                ${getTypeIcon(notif.type)}
+                            </div>
+                            ${notif.title}
+                        </div>
+                        <div class="notification-time">
+                            <i class="bi bi-clock me-1"></i>${new Date(notif.createdAt).toLocaleString('zh-CN')}
+                        </div>
+                    </div>
+                    <div class="notification-body">
+                        <div class="notification-content">${notif.content}</div>
+                        <span class="notification-type ${notif.type}">
+                            <i class="bi bi-tag me-1"></i>${getTypeText(notif.type)}
+                        </span>
+                    </div>
+                    <div class="notification-footer">
+                        ${!notif.isRead ? `
+                            <div class="d-flex align-items-center">
+                                <div class="unread-indicator me-2"></div>
+                                <span class="text-muted">未读</span>
+                            </div>
+                        ` : `
+                            <span class="text-muted"><i class="bi bi-check2-circle me-1"></i>已读</span>
+                        `}
+                        ${!notif.isRead ? `
+                            <button class="btn btn-sm btn-primary" onclick="markAsRead(${notif.id})">
+                                <i class="bi bi-check2 me-1"></i>标记为已读
+                            </button>
+                        ` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function getTypeIcon(type) {
+            const icons = {
+                'ORDER': '<i class="bi bi-bag"></i>',
+                'APPROVAL': '<i class="bi bi-clipboard-check"></i>',
+                'INVENTORY': '<i class="bi bi-box-seam"></i>'
+            };
+            return icons[type] || '<i class="bi bi-bell"></i>';
+        }
+
+        function getTypeText(type) {
+            const texts = {
+                'ORDER': '订单',
+                'APPROVAL': '审批',
+                'INVENTORY': '库存'
+            };
+            return texts[type] || type;
+        }
+
+        async function markAsRead(notificationId) {
+            const response = await fetch(`/api/notifications/${notificationId}/read`, {
+                method: 'PUT'
+            });
+            loadNotifications();
+        }
+
+        async function markAllAsRead() {
+            const response = await fetch(`/api/notifications/read-all?userId=${currentUser.id}`, {
+                method: 'PUT'
+            });
+            loadNotifications();
+        }
+
+        function logout() {
+            localStorage.removeItem('user');
+            window.location.href = '/login';
+        }
+
+        loadUser();
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

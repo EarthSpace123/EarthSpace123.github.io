@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的订单 - 图书商城</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <style>
+        .page-header {
+            background: var(--primary-gradient);
+            color: white;
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+            border-radius: 0 0 20px 20px;
+        }
+        .page-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        .page-subtitle {
+            opacity: 0.9;
+        }
+        .order-card {
+            border-radius: 15px;
+            overflow: hidden;
+            margin-bottom: 1.5rem;
+            transition: all var(--transition-speed);
+        }
+        .order-card:hover {
+            box-shadow: var(--card-hover-shadow);
+            transform: translateY(-3px);
+        }
+        .order-header {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            padding: 1.5rem;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        .order-number {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text-color);
+            margin-bottom: 0.5rem;
+        }
+        .order-date {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        .order-status {
+            padding: 0.5rem 1.5rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .status-approved {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status-rejected {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .status-completed {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+        .order-body {
+            padding: 1.5rem;
+        }
+        .order-item {
+            display: flex;
+            align-items: center;
+            padding: 1rem 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .order-item:last-child {
+            border-bottom: none;
+        }
+        .item-image {
+            width: 60px;
+            height: 80px;
+            background: linear-gradient(135deg, #f0f0f0 0%, #e0e0e0 100%);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            color: var(--text-muted);
+            margin-right: 1rem;
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+        .item-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .item-info {
+            flex: 1;
+        }
+        .item-name {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-color);
+            margin-bottom: 0.25rem;
+        }
+        .item-quantity {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+        .item-price {
+            font-weight: 700;
+            color: var(--primary-color);
+            font-size: 1.1rem;
+        }
+        .order-footer {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            padding: 1.5rem;
+            border-top: 2px solid #e0e0e0;
+        }
+        .order-total {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .total-label {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-color);
+        }
+        .total-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+        .order-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+        .btn-view {
+            padding: 0.5rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            background: var(--primary-gradient);
+            border: none;
+            transition: all var(--transition-speed);
+        }
+        .btn-view:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        .empty-orders {
+            text-align: center;
+            padding: 4rem 2rem;
+            background: white;
+            border-radius: 15px;
+            box-shadow: var(--card-shadow);
+        }
+        .empty-orders-icon {
+            font-size: 6rem;
+            margin-bottom: 1.5rem;
+            animation: float 3s ease-in-out infinite;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        .btn-start-shopping {
+            padding: 1rem 2rem;
+            border-radius: 10px;
+            font-weight: 600;
+            background: var(--secondary-gradient);
+            border: none;
+            transition: all var(--transition-speed);
+        }
+        .btn-start-shopping:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(240, 147, 251, 0.4);
+        }
+        .loading-spinner {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 300px;
+        }
+        .filter-tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+        .filter-tab {
+            padding: 0.5rem 1.5rem;
+            border-radius: 20px;
+            border: 2px solid #e0e0e0;
+            background: white;
+            color: var(--text-muted);
+            font-weight: 500;
+            cursor: pointer;
+            transition: all var(--transition-speed);
+        }
+        .filter-tab:hover,
+        .filter-tab.active {
+            background: var(--primary-gradient);
+            border-color: var(--primary-color);
+            color: white;
+            transform: translateY(-2px);
+        }
+        @media (max-width: 768px) {
+            .order-header {
+                flex-direction: column;
+                text-align: center;
+            }
+            .order-status {
+                margin-top: 1rem;
+            }
+            .order-item {
+                flex-direction: column;
+                text-align: center;
+            }
+            .item-image {
+                margin-right: 0;
+                margin-bottom: 0.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="bi bi-book me-2"></i>
+                图书商城
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">
+                            <i class="bi bi-house me-1"></i>
+                            首页
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" id="cartLink">
+                            <i class="bi bi-cart3 me-1"></i>
+                            购物车
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#" id="orderLink">
+                            <i class="bi bi-box-seam me-1"></i>
+                            我的订单
+                        </a>
+                    </li>
+                    <li class="nav-item" id="approvalNavItem" style="display: none;">
+                        <a class="nav-link" href="#" id="approvalLink">
+                            <i class="bi bi-check-circle me-1"></i>
+                            审批管理
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" id="notificationLink">
+                            <i class="bi bi-bell me-1"></i>
+                            通知
+                        </a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="profileDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-person-circle me-1"></i>
+                            个人中心
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profileDropdown">
+                            <li>
+                                <a class="dropdown-item" href="#" id="profileLink">
+                                    <i class="bi bi-person me-2"></i>
+                                    个人中心
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item" href="#" onclick="logout()">
+                                    <i class="bi bi-box-arrow-right me-2"></i>
+                                    退出
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="page-header">
+        <div class="container">
+            <h1 class="page-title">📦 我的订单</h1>
+            <p class="page-subtitle">查看和管理您的所有订单</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="filter-tabs">
+            <button class="filter-tab active" onclick="filterOrders('')">全部</button>
+            <button class="filter-tab" onclick="filterOrders('PENDING')">代发货</button>
+            <button class="filter-tab" onclick="filterOrders('SHIPPED')">已发货</button>
+            <button class="filter-tab" onclick="filterOrders('CANCELLED')">已取消</button>
+            <button class="filter-tab" onclick="filterOrders('COMPLETED')">已完成</button>
+        </div>
+
+        <div id="ordersContent">
+            <div class="loading-spinner">
+                <div class="spinner-border text-primary" role="status"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentUser = null;
+        let allOrders = [];
+        let currentFilter = '';
+
+        function loadUser() {
+            const userStr = localStorage.getItem('user');
+            if (!userStr) {
+                window.location.href = '/login';
+                return;
+            }
+            currentUser = JSON.parse(userStr);
+            updateNavLinks();
+            loadOrders();
+        }
+
+        function updateNavLinks() {
+            document.getElementById('cartLink').href = '/cart?userId=' + currentUser.id;
+            document.getElementById('orderLink').href = '/orders?userId=' + currentUser.id;
+            document.getElementById('profileLink').href = '/profile?userId=' + currentUser.id;
+            document.getElementById('notificationLink').href = '/notifications?userId=' + currentUser.id;
+            
+            if (currentUser.role === 'STAFF' || currentUser.role === 'MANAGER' || currentUser.role === 'BOSS') {
+                document.getElementById('approvalNavItem').style.display = 'block';
+                document.getElementById('approvalLink').href = '/approvals?userId=' + currentUser.id;
+            }
+        }
+
+        async function loadOrders() {
+            const container = document.getElementById('ordersContent');
+            
+            try {
+                const response = await fetch(`/api/orders?userId=${currentUser.id}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                allOrders = await response.json();
+                renderOrders(allOrders);
+            } catch (error) {
+                console.error('加载订单失败:', error);
+                container.innerHTML = `
+                    <div class="empty-orders">
+                        <div class="empty-orders-icon">⚠️</div>
+                        <h3>加载失败</h3>
+                        <p class="text-muted">错误信息: ${error.message}</p>
+                        <button class="btn btn-primary mt-3" onclick="loadOrders()">
+                            <i class="bi bi-arrow-clockwise me-2"></i>重试
+                        </button>
+                    </div>
+                `;
+            }
+        }
+
+        function renderOrders(orders) {
+            const container = document.getElementById('ordersContent');
+            
+            if (orders.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-orders">
+                        <div class="empty-orders-icon">📦</div>
+                        <h3>暂无订单</h3>
+                        <p class="text-muted mb-4">您还没有创建任何订单</p>
+                        <a href="/" class="btn btn-start-shopping">
+                            <i class="bi bi-cart-plus me-2"></i>
+                            开始购物
+                        </a>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = orders.map(order => {
+                const statusClass = `status-${order.status.toLowerCase()}`;
+                const statusText = {
+                    'PENDING': '代发货',
+                    'SHIPPED': '已发货',
+                    'CANCELLED': '已取消',
+                    'COMPLETED': '已完成'
+                }[order.status] || order.status;
+
+                return `
+                    <div class="card order-card fade-in">
+                        <div class="order-header">
+                            <div>
+                                <div class="order-number">
+                                    <i class="bi bi-receipt me-2"></i>
+                                    订单号: #${order.id}
+                                </div>
+                                <div class="order-date">
+                                    <i class="bi bi-calendar me-1"></i>
+                                    ${new Date(order.createdAt).toLocaleString('zh-CN')}
+                                </div>
+                            </div>
+                            <span class="order-status ${statusClass}">
+                                <i class="bi bi-info-circle me-1"></i>
+                                ${statusText}
+                            </span>
+                        </div>
+                        <div class="order-body">
+                            ${order.items.map(item => `
+                                <div class="order-item">
+                                    <div class="item-image">
+                                        ${item.product.imageUrl ? `<img src="${item.product.imageUrl}" alt="${item.product.name}" class="item-img">` : '<span>📖</span>'}
+                                    </div>
+                                    <div class="item-info">
+                                        <div class="item-name">${item.product.name}</div>
+                                        <div class="item-quantity">数量: ${item.quantity}</div>
+                                    </div>
+                                    <div class="item-price">¥${(item.product.price * item.quantity).toFixed(2)}</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                        <div class="order-footer">
+                            <div class="order-total">
+                                <span class="total-label">订单总计</span>
+                                <span class="total-value">¥${order.totalAmount.toFixed(2)}</span>
+                            </div>
+                            <div class="order-actions">
+                                <button class="btn btn-view" onclick="viewOrder(${order.id})">
+                                    <i class="bi bi-eye me-1"></i>
+                                    查看详情
+                                </button>
+                                ${order.status === 'PENDING' ? `
+                                <button class="btn btn-danger" onclick="cancelOrder(${order.id})">
+                                    <i class="bi bi-x-circle me-1"></i>
+                                    取消订单
+                                </button>
+                                ` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function filterOrders(status) {
+            currentFilter = status;
+            
+            document.querySelectorAll('.filter-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            if (!status) {
+                renderOrders(allOrders);
+            } else {
+                const filtered = allOrders.filter(o => o.status === status);
+                renderOrders(filtered);
+            }
+        }
+
+        function viewOrder(orderId) {
+            const order = allOrders.find(o => o.id === orderId);
+            if (!order) return;
+
+            const statusText = {
+                'PENDING': '代发货',
+                'SHIPPED': '已发货',
+                'CANCELLED': '已取消',
+                'COMPLETED': '已完成'
+            }[order.status] || order.status;
+
+            const itemsHtml = order.items.map(item => `
+                <div class="order-item">
+                    <div class="item-image">
+                        ${item.product.imageUrl ? `<img src="${item.product.imageUrl}" alt="${item.product.name}" class="item-img">` : '<span>📖</span>'}
+                    </div>
+                    <div class="item-info">
+                        <div class="item-name">${item.product.name}</div>
+                        <div class="item-quantity">数量: ${item.quantity}</div>
+                    </div>
+                    <div class="item-price">¥${(item.product.price * item.quantity).toFixed(2)}</div>
+                </div>
+            `).join('');
+
+            alert(`
+订单详情
+================================
+订单号: #${order.id}
+创建时间: ${new Date(order.createdAt).toLocaleString('zh-CN')}
+订单状态: ${statusText}
+订单总额: ¥${order.totalAmount.toFixed(2)}
+
+商品列表:
+${order.items.map(item => `- ${item.product.name} × ${item.quantity} = ¥${(item.product.price * item.quantity).toFixed(2)}`).join('\n')}
+================================
+            `);
+        }
+
+        async function cancelOrder(orderId) {
+            if (!confirm('确定要取消这个订单吗？取消后订单金额将退还到您的账户。')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/orders/${orderId}/cancel`, {
+                    method: 'POST'
+                });
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('✅ 订单取消成功，订单金额已退还到您的账户');
+                    loadOrders();
+                } else {
+                    alert('❌ ' + result.message);
+                }
+            } catch (error) {
+                alert('❌ 取消订单失败，请稍后重试');
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('user');
+            window.location.href = '/login';
+        }
+
+        loadUser();
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
